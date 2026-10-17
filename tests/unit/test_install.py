@@ -286,7 +286,7 @@ def setup_args(tmp_path, **overrides):
     args = dict(config=tmp_path / "root" / "config.toml", profile=None, accelerator=None, yes=True,
                 no_download=False, no_ollama=False, no_launcher=True, no_verify=False, dry_run=False,
                 installed_version=None, role="full", server_url=None, server_header=None, invite=None,
-                device_name=None)  # fmt: skip
+                device_name=None, no_grammar=False)  # fmt: skip
     args.update(overrides)
     return Namespace(**args)
 
@@ -364,6 +364,22 @@ class TestSetup:
         monkeypatch.setattr(wizard.ollama, "find", lambda: None)
         monkeypatch.setattr(wizard.ollama, "install_command", lambda *a: None)
         assert run_setup(tmp_path, Recorder(), machine([nvidia(12)]), no_verify=True) == 0
+        assert load_user_settings(tmp_path / "data")["analyzers"] == ["pronunciation"]
+        assert install_root.pulled == []
+
+    def test_grammar_is_optional_and_its_needs_are_shown(self, tmp_path, install_root):
+        shown = []
+        asked = []
+        console = wizard.Console(interactive=True, ask=lambda q: asked.append(q) or "n", out=shown.append)
+        setup = wizard.Setup(setup_args(tmp_path, yes=False, profile="standard", no_launcher=True), console,
+                             runner=Recorder(), detect=lambda root: machine([nvidia(12)]))  # fmt: skip
+        assert setup.run_all() == 1  # the final "Continue?" answer is also "n"
+        text = "\n".join(shown)
+        assert "Grammar checking (optional)" in text and "Ollama" in text and "qwen3:8b" in text and "GPU memory" in text
+        assert any("Check grammar too?" in q for q in asked)
+
+    def test_no_grammar_flag_skips_the_question(self, tmp_path, install_root):
+        assert run_setup(tmp_path, Recorder(), machine([nvidia(12)]), no_verify=True, no_grammar=True) == 0
         assert load_user_settings(tmp_path / "data")["analyzers"] == ["pronunciation"]
         assert install_root.pulled == []
 

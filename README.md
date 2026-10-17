@@ -71,7 +71,7 @@ The script installs [uv](https://docs.astral.sh/uv/) if needed, downloads zephvo
 1. 🔍 **detects your hardware**: CPU, RAM, GPU and its memory, free disk space;
 2. 🎚️ **recommends a profile** (below). Accept it or pick another;
 3. 📋 **shows what it will download** and checks the disk space;
-4. 🦙 **installs [Ollama](https://ollama.com)** for grammar, if you agree (winget, Homebrew, pacman or Ollama's script);
+4. 🦙 **installs [Ollama](https://ollama.com)** for grammar checking, which is optional: setup lists what it needs (Ollama, the model and its size, GPU memory) and asks first, or skip it with `--no-grammar`; it installs Ollama only if you agree (winget, Homebrew, pacman or Ollama's script);
 5. 🔥 **installs the matching PyTorch build** (NVIDIA → CUDA, AMD on Linux → ROCm, otherwise CPU; Macs use the Apple GPU);
 6. ⬇️ **downloads the models** with progress bars;
 7. 🚪 **adds zephvox to your app menu** and a `zephvox` command to your terminal;

@@ -238,11 +238,34 @@ class Setup:
             say(f"  Install it from {ollama.DOWNLOAD_PAGE}, then run `zephvox setup` again.")
         return None
 
-    def disable_grammar(self, config: Config) -> None:
+    def ask_grammar(self, config: Config, downloads: list[Download], accelerator: str) -> bool:
+        """Grammar checking is optional: say what it needs and ask. False means leave it off."""
+        say = self.console.say
+        models = [d for d in downloads if d.source == "ollama"]
+        if not grammar_enabled(config) or not models:
+            return True  # off already, or an API instead of a local model: nothing to install
+        if getattr(self.args, "no_grammar", False):
+            say("  Grammar checking: off (--no-grammar).")
+            return False
+        from .custom import GRAMMAR
+
+        model = models[0]
+        memory = {name: gpu_gb for name, _, gpu_gb in GRAMMAR}.get(model.name)
+        on_gpu = accelerator != "cpu"
+        say("\n  Grammar checking (optional) finds grammar mistakes in what you say. It needs:")
+        say(f"    - Ollama, a local model server: {'installed' if ollama.find() else 'not installed (setup can install it)'}")
+        say(f"    - the {model.name} model: {'already downloaded' if downloaded(model) else gb(model.approx_gb) + ' to download'}")
+        if memory:
+            where = f"{memory:g} GB of GPU memory" if on_gpu else "about the same in RAM; analyses are slower"
+            say(f"    - {where} while it runs (alongside the speech models)")
+        say("    Pronunciation checking works without it, and you can turn it on later in the page's settings.")
+        return self.console.confirm("  Check grammar too?")
+
+    def disable_grammar(self, config: Config, reason: str = "once Ollama works") -> None:
         stored = load_user_settings(config.engine.data_dir)
         stored["analyzers"] = [a for a in config.engine.analyzers if a != "grammar"] or ["pronunciation"]
         save_user_settings(config.engine.data_dir, stored)
-        self.console.say("  Grammar checking is off for now; turn it on in the page's settings once Ollama works.")
+        self.console.say(f"  Grammar checking is off for now; turn it on in the page's settings {reason}.")
 
     def download(self, config: Config, downloads: list[Download], ollama_binary: str | None) -> None:
         self.console.step("Downloading models")
@@ -443,6 +466,9 @@ class Setup:
         accelerator = self.args.accelerator or profiles.accelerator(profile, self.hw)
         config = preview_config(self.config_path, name, self.template, self.custom)
         downloads = plan_downloads(config)
+        grammar_off = self.custom is None and not self.ask_grammar(config, downloads, accelerator)
+        if grammar_off:
+            config.engine.analyzers = [a for a in config.engine.analyzers if a != "grammar"] or ["pronunciation"]
         if self.args.dry_run:
             self.show_plan(profile, accelerator, config, downloads, ask=False)
             say("\nDry run: nothing changed.")
@@ -469,6 +495,8 @@ class Setup:
             say(f"  Custom choices saved in {profiles.custom_path(self.config_path)}")
         choose_profile(self.config_path, name, template=self.template)
         say(f"  Profile '{name}' saved in {self.config_path}")
+        if grammar_off:  # after choose_profile, which clears analyzers saved earlier
+            self.disable_grammar(config, "whenever you like")
 
         config = load_config(self.config_path)
         if was_client and config.remote.mode == "remote" and self.console.confirm(

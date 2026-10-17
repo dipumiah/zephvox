@@ -56,6 +56,7 @@ def _parser() -> argparse.ArgumentParser:
     st.add_argument("--accelerator", choices=["cpu", "cuda", "rocm"], help="PyTorch build (default: detected)")
     st.add_argument("-y", "--yes", action="store_true", help="accept every default without asking")
     st.add_argument("--no-download", action="store_true", help="download models on first use instead")
+    st.add_argument("--no-grammar", action="store_true", help="don't offer grammar checking (pronunciation only)")
     st.add_argument("--no-ollama", action="store_true", help="don't install Ollama (grammar stays off)")
     st.add_argument("--no-launcher", action="store_true", help="don't add an app-menu entry")
     st.add_argument("--no-verify", action="store_true", help="skip the test analysis")
