@@ -66,6 +66,25 @@ def replace_tree(new: Path, root: Path) -> None:
         shutil.move(str(item), target)
 
 
+def _launcher() -> Path:
+    """The environment's `zephvox` launcher (on Windows Scripts\\zephvox.exe, the process running the update)."""
+    return Path(sys.executable).parent / "zephvox.exe"
+
+
+def free_launcher() -> Path | None:
+    """Windows can't overwrite a running exe but can rename it: move the launcher aside so `uv sync`
+    can write a fresh one. Returns where it went (None if there was nothing to move)."""
+    if os.name != "nt":
+        return None  # elsewhere a running file can be replaced freely
+    exe = _launcher()
+    if not exe.exists():
+        return None
+    old = exe.with_name(exe.name + ".old")
+    old.unlink(missing_ok=True)  # left by an earlier update, no longer running
+    exe.rename(old)
+    return old
+
+
 def run_update(args: argparse.Namespace, fetch: Fetch = http_get, runner: Runner = subprocess.run) -> int:
     root = project_root()
     try:
@@ -89,7 +108,13 @@ def run_update(args: argparse.Namespace, fetch: Fetch = http_get, runner: Runner
                 print("zephvox is running: stopping it for the update …")
                 stop_daemon(data_dir)
             replace_tree(new_tree, root)
-        sync(root, state.extras or ["models", state.accelerator or "cpu", "desktop", "web", "voice"], runner)
+        aside = free_launcher()
+        try:
+            sync(root, state.extras or ["models", state.accelerator or "cpu", "desktop", "web", "voice"], runner)
+        except BaseException:
+            if aside is not None and not _launcher().exists():
+                aside.rename(_launcher())  # the update failed: keep the old command working
+            raise
         state.version = version
         state.save(root)
     except (ZephvoxError, OSError, tarfile.TarError, DaemonError) as e:
