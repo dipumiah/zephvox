@@ -7,7 +7,7 @@ also offered under separate commercial licenses (see [LICENSING.md](LICENSING.md
 do both, the maintainer needs permission to license your contribution under either. This agreement
 gives that permission. You keep the copyright to your work.
 
-"We" and "the maintainer" means dipoahmed018, the owner of the zephvox project, and anyone the
+"We" and "the maintainer" means dipumiah, the owner of the zephvox project, and anyone the
 project is transferred to. "You" means the person, or the organization they act for, who submits a
 contribution. A "contribution" is any code, documentation or other material you submit to the
 project, for example in a pull request, patch or issue.

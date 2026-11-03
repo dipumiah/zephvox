@@ -5,7 +5,7 @@ description = "espeak-ng pronunciations (any word, US or UK) for zephvox"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
-authors = [{ name = "dipoahmed018", email = "dipoahmed018@gmail.com" }]
+authors = [{ name = "dipumiah", email = "dipoahmed018@gmail.com" }]
 requires-python = ">=3.12,<3.14"
 # zephvox itself is not listed: this plugin is only ever loaded by an installed zephvox.
 dependencies = [

@@ -5,7 +5,7 @@ description = "Pluggable engine that finds pronunciation and grammar mistakes in
 readme = "README.md"
 license = "AGPL-3.0-only"
 license-files = ["LICENSE"]
-authors = [{ name = "dipoahmed018", email = "dipoahmed018@gmail.com" }]
+authors = [{ name = "dipumiah", email = "dipoahmed018@gmail.com" }]
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "numpy>=1.26",

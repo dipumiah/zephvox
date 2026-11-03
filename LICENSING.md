@@ -1,6 +1,6 @@
 # Licensing
 
-Copyright (C) 2026 dipoahmed018. zephvox is **dual-licensed**.
+Copyright (C) 2026 dipumiah. zephvox is **dual-licensed**.
 
 ## Open source: AGPL-3.0
 
