@@ -263,6 +263,26 @@ export interface StageInfo {
   drivers: DriverInfo[];
 }
 
+export interface ModelItem {
+  id: string;
+  name: string;
+  label: string;
+  state: "queued" | "downloading" | "verifying" | "done" | "failed" | "paused";
+  done: number | null; // bytes
+  total: number | null;
+  error: string | null;
+}
+
+/** Speech models being fetched in the background (all at once, ahead of first use). */
+export interface ModelsProgress {
+  running: boolean;
+  error: string | null;
+  items: ModelItem[];
+  done: number;
+  total: number | null;
+  finished: boolean;
+}
+
 export interface ModelDownload {
   name: string;
   running: boolean;

@@ -222,3 +222,21 @@ describe("AnalyzerToggles", () => {
     expect(screen.getByText(/Grammar isn't available on this server/)).toBeInTheDocument();
   });
 });
+
+describe("model downloads", () => {
+  it("computes a percent and shows a banner only while something is wrong or running", async () => {
+    const { percent, ModelDownloadsBanner } = await import("@/components/ModelDownloads");
+    expect(percent(50, 200)).toBe(25);
+    expect(percent(5, null)).toBeNull();
+    expect(percent(500, 200)).toBe(100);
+    expect(typeof ModelDownloadsBanner).toBe("function");
+  });
+});
+
+describe("models_progress event", () => {
+  it("stores the snapshot", () => {
+    const snap = { running: true, error: null, items: [], done: 1, total: 2, finished: false };
+    const next = reduce(initialState, { type: "server", event: "models_progress", data: snap });
+    expect(next.models).toEqual(snap);
+  });
+});

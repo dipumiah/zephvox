@@ -2,6 +2,7 @@ import { FileText, History as HistoryIcon, House, Settings as SettingsIcon, Targ
 import { useEffect, useRef } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ModelDownloadsBanner } from "@/components/ModelDownloads";
 import { Notices } from "@/components/Notices";
 import { Sky } from "@/components/Sky";
 import { useEngine } from "@/engine";
@@ -110,6 +111,7 @@ export function App() {
           <div className="mx-auto w-full max-w-[920px] px-4 pt-6 pb-28 sm:px-8 sm:pb-20 lg:pt-8">
             <Tabs current={route.view} />
             <main className="sm:pt-8">
+              <ModelDownloadsBanner onOpen={() => navigate("status")} />
               {route.view === "home" && <Home />}
               {route.view === "report" && <Report id={route.id} />}
               {route.view === "practice" && <Practice route={route} />}

@@ -9,6 +9,14 @@ export function fmtDate(iso: string): string {
   return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+/** 1234567 → "1.2 MB" (decimal units, like the download sizes in setup). */
+export function fmtBytes(bytes: number | null | undefined): string {
+  if (bytes == null) return "unknown size";
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  if (bytes >= 1e6) return `${Math.round(bytes / 1e6)} MB`;
+  return `${Math.max(0, Math.round(bytes / 1e3))} KB`;
+}
+
 export function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;
 }

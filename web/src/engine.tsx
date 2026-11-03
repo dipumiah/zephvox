@@ -1,7 +1,7 @@
 // Live engine state for the whole page, fed by the daemon's event stream (/api/events).
 import { createContext, useContext, useEffect, useReducer, type ReactNode } from "react";
 import { api } from "./api";
-import type { EngineMode, InstallProgress, ModelDownload, PracticeAttempt, RemoteInfo, Status, SyncStatus, Triggers } from "./types";
+import type { EngineMode, InstallProgress, ModelDownload, ModelsProgress, PracticeAttempt, RemoteInfo, Status, SyncStatus, Triggers } from "./types";
 
 export const STAGE_LABELS: Record<string, string> = {
   upload: "Sending to the server",
@@ -44,6 +44,7 @@ export interface EngineState {
   configVersion: number; // bumps when options change (here, in another tab, or a profile switch)
   sharingVersion: number; // bumps when sharing or its accounts change
   downloads: Record<string, ModelDownload>; // grammar models being downloaded
+  models: ModelsProgress | null; // speech models being fetched ahead of use
   notices: Notice[];
 }
 
@@ -66,12 +67,14 @@ export const initialState: EngineState = {
   configVersion: 0,
   sharingVersion: 0,
   downloads: {},
+  models: null,
   notices: [],
 };
 
 export type Action =
   | { type: "connected"; value: boolean }
   | { type: "status"; status: Status }
+  | { type: "models"; models: ModelsProgress }
   | { type: "dismiss_notice"; id: number }
   | { type: "notice"; kind: Notice["kind"]; text: string }
   | { type: "server"; event: string; data: Record<string, any> };
@@ -100,6 +103,8 @@ export function reduce(state: EngineState, action: Action): EngineState {
     }
     case "dismiss_notice":
       return { ...state, notices: state.notices.filter((n) => n.id !== action.id) };
+    case "models":
+      return { ...state, models: action.models };
     case "notice":
       return addNotice(state, action.kind, action.text);
     case "server":
@@ -162,6 +167,8 @@ function reduceServer(state: EngineState, event: string, d: Record<string, any>)
       return { ...state, configVersion: state.configVersion + 1 };
     case "sharing_changed":
       return { ...state, sharingVersion: state.sharingVersion + 1 };
+    case "models_progress":
+      return { ...state, models: d as ModelsProgress };
     case "model_download":
       return { ...state, downloads: { ...state.downloads, [d.name]: d as ModelDownload } };
     case "install_output": {
@@ -188,11 +195,16 @@ export function EngineProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const source = new EventSource("/api/events");
-    const refresh = () =>
+    const refresh = () => {
       api
         .status()
         .then((status) => dispatch({ type: "status", status }))
         .catch(() => undefined);
+      api
+        .modelDownloads()
+        .then((models) => dispatch({ type: "models", models }))
+        .catch(() => undefined);
+    };
     source.onopen = () => {
       dispatch({ type: "connected", value: true });
       refresh(); // catch up on anything that happened while disconnected

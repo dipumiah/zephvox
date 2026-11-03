@@ -9,6 +9,7 @@ import { ShortcutEditor } from "@/components/config/ShortcutEditor";
 import { Sharing } from "@/components/config/Sharing";
 import { MissingModels, Options, Stage } from "@/components/config/Stage";
 import { EngineSection } from "@/components/EngineSection";
+import { ModelDownloadsPanel } from "@/components/ModelDownloads";
 import { MicSelect } from "@/components/MicSelect";
 import { PageHead } from "@/components/PageHead";
 import { ProfileSection } from "@/components/ProfileSection";
@@ -134,6 +135,9 @@ function ModelsAndChecks() {
         Everything the profile and <code>config.toml</code> set, changeable here. A change applies to the next recording; “Reset” puts back
         what the profile and <code>config.toml</code> give.
       </p>
+      <SettingsSection id="downloads" title="Downloads" description="Speech models are fetched in the background so they're ready before you need them.">
+        <ModelDownloadsPanel />
+      </SettingsSection>
       <Stage id="stt" kind="stt" title="Speech to text" description="Turns your recording into words, with a time for each word." />
       <Stage id="g2p" kind="g2p" title="Expected sounds" description="How each word should sound: dictionaries first, a model for words they don't have." />
       <Stage id="phonemes" kind="phonemes" title="Heard sounds" description="Which sounds you actually made, straight from the audio." />

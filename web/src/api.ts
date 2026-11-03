@@ -1,4 +1,5 @@
 import type {
+  ModelsProgress,
   AnalysisResult,
   ConfigChange,
   ConfigInfo,
@@ -89,6 +90,9 @@ export const api = {
 
   config: () => request<ConfigInfo>("GET", "/api/config"),
   saveConfig: (changes: ConfigChange[]) => request<ConfigInfo>("PUT", "/api/config", { changes }),
+  modelDownloads: () => request<ModelsProgress>("GET", "/api/models/downloads"),
+  startModelDownloads: () => request<ModelsProgress>("POST", "/api/models/downloads"),
+  cancelModelDownloads: () => request<ModelsProgress>("DELETE", "/api/models/downloads"),
   pullModel: (name: string) => request<ModelDownload>("POST", "/api/models/pull", { name }),
 
   sharing: () => request<SharingInfo>("GET", "/api/sharing"),
