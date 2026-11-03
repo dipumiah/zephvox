@@ -21,7 +21,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "deb", "appimage", "dmg"],
+    "targets": ["nsis", "deb", "appimage", "app", "dmg"],
     "createUpdaterArtifacts": true,
     "category": "Education",
     "shortDescription": "Find and practice your English pronunciation and grammar mistakes",
