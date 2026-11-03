@@ -1,6 +1,6 @@
 [package]
 name = "zephvox-app"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 description = "zephvox desktop app: window, tray, updates and the Python engine it supervises"
 edition = "2021"
 license = "AGPL-3.0-only"

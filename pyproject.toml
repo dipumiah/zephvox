@@ -1,6 +1,6 @@
 [project]
 name = "zephvox"
-version = "0.1.0rc1"
+version = "0.1.0rc2"
 description = "Pluggable engine that finds pronunciation and grammar mistakes in your spoken English"
 readme = "README.md"
 license = "AGPL-3.0-only"
