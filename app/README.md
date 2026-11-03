@@ -90,6 +90,7 @@ builds work, with those warnings.
 - The engine, not the shell, still records the microphone and registers the global shortcuts (pynput / portal).
   If macOS attributes those permissions to the Python binary rather than the app, the fix is to move capture and
   shortcuts into the shell; the engine would then only analyze.
+- Windows ships an NSIS `.exe` only: the `.msi` format can't carry a pre-release version like `0.2.0-rc.1`.
 - Supported targets follow `tool.uv.environments`: Linux x86_64 and arm64, Windows x64, macOS Apple Silicon.
 - AMD and Intel GPUs on Windows use the CPU profile (PyTorch has no build for them).
 - No start-at-login yet.

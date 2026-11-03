@@ -20,10 +20,15 @@ def test_pre_release_spelling():
             bump_version.python_version(bad)
 
 
+def test_python_and_semver_spellings_round_trip():
+    for semver in ("1.2.3", "1.2.3-rc.4"):
+        assert bump_version.semver_from_python(bump_version.python_version(semver)) == semver
+
+
 def test_the_repo_versions_agree_right_now():
     from zephvox import __version__
 
-    assert bump_version.check(bump_version.python_version(__version__)) == []
+    assert bump_version.check(bump_version.semver_from_python(__version__)) == []
 
 
 def test_bump_then_check_in_a_copy(tmp_path, monkeypatch):

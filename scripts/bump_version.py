@@ -29,6 +29,14 @@ def python_version(semver: str) -> str:
     return f"{major}.{minor}.{patch}" + (f"rc{rc}" if rc else "")
 
 
+def semver_from_python(version: str) -> str:
+    """0.2.0rc1 → 0.2.0-rc.1: the inverse of python_version()."""
+    m = re.match(r"^(\d+\.\d+\.\d+)(?:rc(\d+))?$", version)
+    if not m:
+        raise ValueError(f"{version!r} isn't a version this project uses")
+    return m.group(1) + (f"-rc.{m.group(2)}" if m.group(2) else "")
+
+
 # file → (pattern with the version as group 2, how often it must match)
 def targets(semver: str) -> list[tuple[Path, str, str, int]]:
     py = python_version(semver)
