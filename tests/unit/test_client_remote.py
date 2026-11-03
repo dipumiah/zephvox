@@ -1,6 +1,8 @@
 """Client mode end to end, in process: a daemon on "this computer" analyzing on a real server app."""
 
+import importlib.util
 import os
+import shutil
 import stat
 import wave
 from types import SimpleNamespace
@@ -233,6 +235,8 @@ class TestHelpers:
         path = tmp_path / "a.wav"
         audio.write_wav(path, np.zeros(1600, dtype=np.float32))
         assert len(read_pcm(path)) == 3200
+        if not (importlib.util.find_spec("av") or shutil.which("ffmpeg")):
+            return  # resampling needs the models extra (av) or ffmpeg, not installed on every machine
         other = tmp_path / "24k.wav"
         with wave.open(str(other), "wb") as w:
             w.setnchannels(1)

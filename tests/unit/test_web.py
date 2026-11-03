@@ -620,6 +620,9 @@ class TestProfilesApi:
         from zephvox.install.state import InstallState
         from zephvox.web import daemon as daemon_mod
 
+        from zephvox.engine.hardware import GPU, Hardware
+
+        pin_hardware(daemon, Hardware("linux", "x86_64", "Test CPU", 8, 32.0, 100.0, [GPU("nvidia", "RTX", 24.0, "cuda")]))
         InstallState("cpu", ["models", "cpu"]).save(tmp_path)
         monkeypatch.setattr(daemon_mod, "project_root", lambda: tmp_path)
         needs = api.put("/api/profile", json={"name": "large"}).json()["needs"]
@@ -628,12 +631,21 @@ class TestProfilesApi:
         assert not any("PyTorch" in n for n in needs)
 
 
+def pin_hardware(daemon, hw):
+    """Make the daemon see `hw`. It detects the real machine in a background thread at start-up; let that
+    finish first, or it would overwrite the pinned value (and the result would depend on the machine)."""
+    for t in threading.enumerate():
+        if t.name == "hardware":
+            t.join(30)
+    daemon.__dict__["hardware"] = hw
+
+
 def test_profile_preview_changes_nothing_and_status_has_hardware(daemon, monkeypatch, tmp_path):
     from zephvox.engine.hardware import GPU, Hardware
     from zephvox.web import daemon as daemon_mod
 
     hw = Hardware("linux", "x86_64", "Test CPU", 8, 32.0, 100.0, [GPU("amd", "RX 6800 XT", 16.0, "rocm")])
-    daemon.__dict__["hardware"] = hw
+    pin_hardware(daemon, hw)
     monkeypatch.setattr(daemon_mod, "project_root", lambda: None)
     config_path = tmp_path / "config.toml"
     config_path.write_text('profile = "large"\n')

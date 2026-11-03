@@ -7,7 +7,6 @@ from types import SimpleNamespace
 
 import numpy as np
 import pytest
-from dbus_fast import MessageType, Variant
 
 from zephvox.analyzers.base import AnalysisContext
 from zephvox.analyzers.pronunciation.hints import tip
@@ -37,6 +36,12 @@ def practice(text, heard, lexicon=THINK, **settings):
     values = {"transcript": transcript, "expected_phonemes": lexicon, "heard_phonemes": [PhoneSeq(heard)]}
     ctx = AnalysisContext(values.__getitem__, lambda k: None, warnings.append)
     return PracticeAnalyzer(settings).analyze(ctx), warnings
+
+
+try:
+    from dbus_fast import MessageType, Variant
+except ImportError:  # dbus-fast is installed on Linux only
+    MessageType = Variant = None
 
 
 class TestPracticeAnalyzer:
@@ -321,6 +326,7 @@ class FakeBus:
         return SimpleNamespace(message_type=MessageType.METHOD_RETURN, body=[])
 
 
+@pytest.mark.skipif(MessageType is None, reason="the shortcut portal is Linux-only (dbus-fast)")
 class TestPortal:
     def test_setup_binds_and_dispatches_activations(self):
         bus, fired = FakeBus(), []
