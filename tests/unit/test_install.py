@@ -447,7 +447,7 @@ def source_archive(files: dict[str, str]) -> bytes:
 class TestUpdate:
     def test_latest_version(self):
         tag = update.latest_version(lambda url: json.dumps({"tag_name": "v1.1"}).encode())
-        assert tag == ("v1.1", "https://github.com/dipoahmed018/zephvox/archive/refs/tags/v1.1.tar.gz")
+        assert tag == ("v1.1", "https://github.com/dipumiah/zephvox/archive/refs/tags/v1.1.tar.gz")
 
         def offline(url):
             raise OSError("no network")

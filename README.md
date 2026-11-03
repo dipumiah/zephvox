@@ -20,7 +20,7 @@ said and what it should have been. Then practice them until they pass.
 [**Using it**](#-using-zephvox) ·
 [**Server mode**](#-server-mode) ·
 [**Architecture**](#-architecture) ·
-[**Website**](https://dipoahmed018.github.io/zephvox/)
+[**Website**](https://dipumiah.github.io/zephvox/)
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/screenshots/report-dark.png">
@@ -46,7 +46,7 @@ said and what it should have been. Then practice them until they pass.
 ## 🚀 Install
 
 **Desktop app (recommended once releases are published):** download the installer for your system from the
-[latest release](https://github.com/dipoahmed018/zephvox/releases/latest): Windows `.exe`/`.msi`, macOS `.dmg`,
+[latest release](https://github.com/dipumiah/zephvox/releases/latest): Windows `.exe`/`.msi`, macOS `.dmg`,
 Linux `.AppImage`/`.deb`. On first start it sets itself up (with a progress screen for the runtime and each
 speech model) and then **updates itself** from new releases. See [app/README.md](app/README.md). The
 one-line installs below are for the terminal, servers and development.
@@ -64,11 +64,11 @@ One line installs everything into a single folder: `~/zephvox`, or `%LOCALAPPDAT
 
 ```sh
 # macOS / Linux
-curl -LsSf https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.sh | sh
+curl -LsSf https://raw.githubusercontent.com/dipumiah/zephvox/main/install.sh | sh
 ```
 ```powershell
 # Windows (PowerShell)
-powershell -ExecutionPolicy ByPass -c "iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1 | Out-String)"
+powershell -ExecutionPolicy ByPass -c "iex (irm https://raw.githubusercontent.com/dipumiah/zephvox/main/install.ps1 | Out-String)"
 ```
 
 The script installs [uv](https://docs.astral.sh/uv/) if needed, downloads zephvox and starts
@@ -91,12 +91,12 @@ Python packages.
 Get the server's address and an **invite code** from whoever runs it, then:
 
 ```sh
-curl -LsSf https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.sh | sh -s -- \
+curl -LsSf https://raw.githubusercontent.com/dipumiah/zephvox/main/install.sh | sh -s -- \
     --server-url https://speak.example.com --invite inv_...
 ```
 ```powershell
 $env:ZEPHVOX_SETUP_ARGS = "--server-url https://speak.example.com --invite inv_..."
-iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1 | Out-String)
+iex (irm https://raw.githubusercontent.com/dipumiah/zephvox/main/install.ps1 | Out-String)
 ```
 
 The app works exactly as the full one: recordings, history and reports stay on your device, and only
@@ -155,7 +155,7 @@ Unattended install: `curl … | sh -s -- --profile cpu --yes` (Windows: set
 **From a git checkout (development):**
 
 ```sh
-git clone https://github.com/dipoahmed018/zephvox && cd zephvox
+git clone https://github.com/dipumiah/zephvox && cd zephvox
 uv run zephvox setup      # same wizard; keeps the dev tools, and `update` is `git pull`
 ```
 

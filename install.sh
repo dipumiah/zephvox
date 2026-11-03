@@ -1,7 +1,7 @@
 #!/bin/sh
 # zephvox installer for macOS and Linux. Also updates an existing install.
 #
-#   curl -LsSf https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.sh | sh
+#   curl -LsSf https://raw.githubusercontent.com/dipumiah/zephvox/main/install.sh | sh
 #
 # Options go after `sh -s --`, e.g. `... | sh -s -- --profile cpu --yes` (see `zephvox setup --help`).
 # Environment: ZEPHVOX_DIR (default ~/zephvox), ZEPHVOX_VERSION (a release tag; default latest).
@@ -11,7 +11,7 @@
 # then hands over to `zephvox setup`, which detects your hardware and installs the rest.
 set -eu
 
-REPO="dipoahmed018/zephvox"
+REPO="dipumiah/zephvox"
 # An install made under the app's old name (~/speakcheck) is updated in place, not duplicated.
 DIR="${ZEPHVOX_DIR:-${SPEAKCHECK_DIR:-}}"
 if [ -z "$DIR" ]; then

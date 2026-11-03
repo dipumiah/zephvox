@@ -10,7 +10,7 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="zephvox: say it, see what to fix">
   <meta property="og:description" content="Record yourself speaking English and get the sounds and sentences to work on, then practice them until they pass.">
-  <meta property="og:image" content="https://dipoahmed018.github.io/zephvox/assets/og.png">
+  <meta property="og:image" content="https://dipumiah.github.io/zephvox/assets/og.png">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preload" href="assets/fonts/fraunces-latin-opsz-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="assets/site.css">
@@ -61,7 +61,7 @@
         <a href="#faq">FAQ</a>
       </nav>
       <div class="header-actions">
-        <a class="icon-btn" href="https://github.com/dipoahmed018/zephvox" aria-label="Source code on GitHub"><svg class="icon"><use href="#i-github"/></svg></a>
+        <a class="icon-btn" href="https://github.com/dipumiah/zephvox" aria-label="Source code on GitHub"><svg class="icon"><use href="#i-github"/></svg></a>
         <button class="icon-btn" id="theme" type="button" aria-label="Switch between light and dark"><svg class="icon sun"><use href="#i-sun"/></svg><svg class="icon moon"><use href="#i-moon"/></svg></button>
       </div>
     </div>
@@ -200,11 +200,11 @@
               <h4>Run the installer</h4>
               <p>One command. It installs <a href="https://docs.astral.sh/uv/">uv</a> if you don't have it, downloads zephvox into <span class="path" data-os="unix"><code>~/zephvox</code></span><span class="path" data-os="win" hidden><code>%LOCALAPPDATA%\zephvox</code></span> and starts the setup.</p>
               <div class="code" data-os="unix">
-                <pre><code id="full-unix">curl -LsSf https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.sh | sh</code></pre>
+                <pre><code id="full-unix">curl -LsSf https://raw.githubusercontent.com/dipumiah/zephvox/main/install.sh | sh</code></pre>
                 <button class="copy" type="button" data-copy="full-unix"><svg class="icon"><use href="#i-copy"/></svg><span>Copy</span></button>
               </div>
               <div class="code" data-os="win" hidden>
-                <pre><code id="full-win">powershell -ExecutionPolicy ByPass -c "iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1 | Out-String)"</code></pre>
+                <pre><code id="full-win">powershell -ExecutionPolicy ByPass -c "iex (irm https://raw.githubusercontent.com/dipumiah/zephvox/main/install.ps1 | Out-String)"</code></pre>
                 <button class="copy" type="button" data-copy="full-win"><svg class="icon"><use href="#i-copy"/></svg><span>Copy</span></button>
               </div>
               <p class="aside">Run it in a terminal (PowerShell on Windows). Nothing else needs a system install.</p>
@@ -288,13 +288,13 @@
               <h4>Run one command</h4>
               <p>Put in the server's address and your code.</p>
               <div class="code" data-os="unix">
-                <pre><code id="client-unix">curl -LsSf https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.sh | sh -s -- \
+                <pre><code id="client-unix">curl -LsSf https://raw.githubusercontent.com/dipumiah/zephvox/main/install.sh | sh -s -- \
   --server-url https://speak.example.com --invite inv_...</code></pre>
                 <button class="copy" type="button" data-copy="client-unix"><svg class="icon"><use href="#i-copy"/></svg><span>Copy</span></button>
               </div>
               <div class="code" data-os="win" hidden>
                 <pre><code id="client-win">$env:ZEPHVOX_SETUP_ARGS = "--server-url https://speak.example.com --invite inv_..."
-iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1 | Out-String)</code></pre>
+iex (irm https://raw.githubusercontent.com/dipumiah/zephvox/main/install.ps1 | Out-String)</code></pre>
                 <button class="copy" type="button" data-copy="client-win"><svg class="icon"><use href="#i-copy"/></svg><span>Copy</span></button>
               </div>
               <p class="aside">It installs the small client (about 80&nbsp;MB), connects it to the server and adds it to your app menu.</p>
@@ -325,7 +325,7 @@ iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1
               <p>Follow the <a href="#client">client steps</a> there, using your computer's address and that invite.</p>
             </li>
           </ol>
-          <p class="note">Plain <code>http</code> is fine on your own network. To use it from the internet, put HTTPS in front with Caddy or nginx. See <a href="https://github.com/dipoahmed018/zephvox#-server-mode">server mode</a> in the README, which also covers running it 24/7 with Docker.</p>
+          <p class="note">Plain <code>http</code> is fine on your own network. To use it from the internet, put HTTPS in front with Caddy or nginx. See <a href="https://github.com/dipumiah/zephvox#-server-mode">server mode</a> in the README, which also covers running it 24/7 with Docker.</p>
         </div>
       </div>
     </section>
@@ -351,7 +351,7 @@ iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1
           <p class="eyebrow">Troubleshooting</p>
           <h2>If something doesn't work.</h2>
           <p>Running <code>zephvox doctor</code> prints what zephvox found on your computer, which helps with most of these.</p>
-          <p class="fine">Still stuck? <a href="https://github.com/dipoahmed018/zephvox/issues">Open an issue</a> and include the output of <code>zephvox doctor</code>.</p>
+          <p class="fine">Still stuck? <a href="https://github.com/dipumiah/zephvox/issues">Open an issue</a> and include the output of <code>zephvox doctor</code>.</p>
         </div>
         <div class="faq">
           <details><summary><svg class="icon lead"><use href="#i-text"/></svg><span>The report says "Grammar was skipped"</span></summary><p>The grammar model isn't downloaded yet. Open <b>Settings → Models &amp; checks → Grammar</b> and press <b>Download</b>, or run <code>ollama pull qwen3:8b</code> (use the model name shown there). Pronunciation still works in the meantime.</p></details>
@@ -387,11 +387,11 @@ iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1
 
   <footer class="site-footer">
     <div class="wrap">
-      <p>zephvox is free software under the <a href="https://github.com/dipoahmed018/zephvox/blob/main/LICENSE">AGPL-3.0</a>.</p>
+      <p>zephvox is free software under the <a href="https://github.com/dipumiah/zephvox/blob/main/LICENSE">AGPL-3.0</a>.</p>
       <nav aria-label="Project">
-        <a href="https://github.com/dipoahmed018/zephvox">Source code</a>
-        <a href="https://github.com/dipoahmed018/zephvox/blob/main/LICENSING.md">Commercial licensing</a>
-        <a href="https://github.com/dipoahmed018/zephvox/blob/main/THIRD_PARTY_LICENSES.md">Third-party licenses</a>
+        <a href="https://github.com/dipumiah/zephvox">Source code</a>
+        <a href="https://github.com/dipumiah/zephvox/blob/main/LICENSING.md">Commercial licensing</a>
+        <a href="https://github.com/dipumiah/zephvox/blob/main/THIRD_PARTY_LICENSES.md">Third-party licenses</a>
       </nav>
     </div>
   </footer>

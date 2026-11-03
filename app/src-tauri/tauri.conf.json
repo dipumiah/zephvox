@@ -34,7 +34,7 @@
   "plugins": {
     "updater": {
       "pubkey": "REPLACE_WITH_PUBLIC_KEY",
-      "endpoints": ["https://github.com/dipoahmed018/zephvox/releases/latest/download/latest.json"],
+      "endpoints": ["https://github.com/dipumiah/zephvox/releases/latest/download/latest.json"],
       "windows": { "installMode": "passive" }
     }
   }

@@ -1,6 +1,6 @@
 # zephvox installer for Windows. Also updates an existing install.
 #
-#   powershell -ExecutionPolicy ByPass -c "iex (irm https://raw.githubusercontent.com/dipoahmed018/zephvox/main/install.ps1 | Out-String)"
+#   powershell -ExecutionPolicy ByPass -c "iex (irm https://raw.githubusercontent.com/dipumiah/zephvox/main/install.ps1 | Out-String)"
 #
 # Environment: ZEPHVOX_DIR (default %LOCALAPPDATA%\zephvox), ZEPHVOX_VERSION (a release tag;
 # default latest), ZEPHVOX_SETUP_ARGS (passed to `zephvox setup`, e.g. "--profile cpu --yes").
@@ -11,7 +11,7 @@
 & {
     $ErrorActionPreference = "Stop"
     $ProgressPreference = "SilentlyContinue"  # Invoke-WebRequest is many times slower with it
-    $Repo = "dipoahmed018/zephvox"
+    $Repo = "dipumiah/zephvox"
     $Old = Join-Path $env:LOCALAPPDATA "speakcheck"   # an install made under the app's old name is updated in place
     $New = Join-Path $env:LOCALAPPDATA "zephvox"
     $Dir = if ($env:ZEPHVOX_DIR) { $env:ZEPHVOX_DIR } elseif ($env:SPEAKCHECK_DIR) { $env:SPEAKCHECK_DIR } `

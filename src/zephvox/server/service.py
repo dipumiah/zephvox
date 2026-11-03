@@ -27,7 +27,7 @@ from .db import Account, Database, Job
 from .jobs import JobRunner
 from .webhooks import Deliverer
 
-SOURCE_URL = "https://github.com/dipoahmed018/zephvox"  # AGPL: users of a hosted copy can get its source
+SOURCE_URL = "https://github.com/dipumiah/zephvox"  # AGPL: users of a hosted copy can get its source
 TTS_CACHE = 256
 RUNNABLE_TTL_S = 60.0
 

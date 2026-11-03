@@ -19,7 +19,7 @@ Pull requests can't be merged without it.
 ## Setting up
 
 ```sh
-git clone git@github.com:dipoahmed018/zephvox.git
+git clone git@github.com:dipumiah/zephvox.git
 cd zephvox
 uv sync --extra models --extra cpu --extra web    # or cuda / rocm instead of cpu
 uv run zephvox setup

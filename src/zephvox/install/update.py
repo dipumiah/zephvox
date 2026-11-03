@@ -23,7 +23,7 @@ from .download import cache_path, plan_downloads
 from .state import STATE_FILE, InstallState, Runner, SetupError, is_checkout, sync
 from .wizard import Console
 
-REPO = "dipoahmed018/zephvox"
+REPO = "dipumiah/zephvox"
 # Never replaced by an update: the user's files and the environment.
 PRESERVE = {"config.toml", ".env", ".venv", STATE_FILE, ".git"}
 
