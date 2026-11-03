@@ -1,0 +1,69 @@
+# Tests on every push and pull request: the engine (Python), the page (React) and the desktop shell (Rust).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    # Linux is the reference; Windows and macOS are watched, not yet required to be green.
+    continue-on-error: ${{ matrix.os != 'ubuntu-latest' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run --extra web --extra desktop python -m pytest -q
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - run: npm ci
+        working-directory: web
+      - run: npm run typecheck && npm test
+        working-directory: web
+      - name: The committed build is up to date
+        run: |
+          npm run build
+          git diff --exit-code -- ../src/zephvox/web/static
+        working-directory: web
+      - name: Start-up screen
+        run: node app/tests/boot-ui.test.cjs
+
+  app:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: "clippy, rustfmt" }
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: app/src-tauri }
+      - name: Linux libraries Tauri needs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: astral-sh/setup-uv@v5
+      - name: Resources and icons (a build needs them to exist)
+        run: |
+          python3 app/scripts/prepare_resources.py --no-uv
+          mkdir -p app/src-tauri/resources/uv && touch app/src-tauri/resources/uv/uv
+          cd app && npm install && npx tauri icon ../docs/assets/logo.svg
+      - run: cargo fmt --check
+        working-directory: app/src-tauri
+      - run: cargo clippy --all-targets -- -D warnings
+        working-directory: app/src-tauri
+      - run: cargo test
+        working-directory: app/src-tauri

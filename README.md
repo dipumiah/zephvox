@@ -45,6 +45,12 @@ said and what it should have been. Then practice them until they pass.
 
 ## 🚀 Install
 
+**Desktop app (recommended once releases are published):** download the installer for your system from the
+[latest release](https://github.com/dipoahmed018/zephvox/releases/latest): Windows `.exe`/`.msi`, macOS `.dmg`,
+Linux `.AppImage`/`.deb`. On first start it sets itself up (with a progress screen for the runtime and each
+speech model) and then **updates itself** from new releases. See [app/README.md](app/README.md). The
+one-line installs below are for the terminal, servers and development.
+
 One line installs everything into a single folder: `~/zephvox`, or `%LOCALAPPDATA%\zephvox` on Windows.
 
 |  | 🖥️ Full app | ☁️ Client only |

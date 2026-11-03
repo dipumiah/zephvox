@@ -23,3 +23,8 @@ web/*.tsbuildinfo
 .env
 /.install.json
 /custom-profile.toml
+app/src-tauri/resources/
+app/src-tauri/target/
+app/src-tauri/gen/
+app/node_modules/
+app/src-tauri/icons/

@@ -1,0 +1,14 @@
+{
+  "name": "zephvox-app",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "tauri": "tauri",
+    "icons": "tauri icon ../docs/assets/logo.svg",
+    "resources": "python scripts/prepare_resources.py",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

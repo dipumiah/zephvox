@@ -1,0 +1,95 @@
+# Builds the installers (Windows, Linux x64 + arm64, macOS) when a version tag is pushed and attaches
+# them, with the signed update manifest (latest.json), to a GitHub release. The app updates itself from
+# that manifest, so the release is only published once every platform has built.
+#
+# One-time setup (see app/README.md):
+#   - TAURI_SIGNING_PRIVATE_KEY / TAURI_SIGNING_PRIVATE_KEY_PASSWORD secrets: `npx tauri signer generate`,
+#     and its public key in app/src-tauri/tauri.conf.json (plugins.updater.pubkey).
+#   - optional: Apple (APPLE_CERTIFICATE, APPLE_CERTIFICATE_PASSWORD, APPLE_SIGNING_IDENTITY, APPLE_ID,
+#     APPLE_PASSWORD, APPLE_TEAM_ID) and Windows code-signing secrets, to avoid "unknown developer" warnings.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versions agree and the updater key is set
+        run: |
+          py=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -1)
+          tauri=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")
+          cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' app/src-tauri/Cargo.toml | head -1)
+          echo "python $py, tauri $tauri, cargo $cargo, ref ${GITHUB_REF_NAME}"
+          [ "$py" = "$tauri" ] && [ "$py" = "$cargo" ] || { echo "versions differ"; exit 1; }
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then [ "v$py" = "${GITHUB_REF_NAME}" ] || { echo "tag doesn't match the version"; exit 1; }; fi
+          if grep -q REPLACE_WITH_PUBLIC_KEY app/src-tauri/tauri.conf.json; then echo "set plugins.updater.pubkey first"; exit 1; fi
+      - uses: astral-sh/setup-uv@v5
+      - run: uv run --extra web --extra desktop python -m pytest -q
+
+  build:
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+          - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-22.04-arm, target: aarch64-unknown-linux-gnu }
+          - { os: macos-14, target: aarch64-apple-darwin }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: "${{ matrix.target }}" }
+      - uses: swatinem/rust-cache@v2
+        with: { workspaces: app/src-tauri }
+      - if: startsWith(matrix.os, 'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libxdo-dev
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: Bundle the engine and uv
+        run: python app/scripts/prepare_resources.py --target ${{ matrix.target }}
+      - name: Icons
+        run: |
+          npm install
+          npx tauri icon ../docs/assets/logo.svg
+        working-directory: app
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          projectPath: app
+          tagName: ${{ github.ref_name }}
+          releaseName: "zephvox ${{ github.ref_name }}"
+          releaseDraft: true
+          includeUpdaterJson: true
+          args: --target ${{ matrix.target }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish the release (the app's update check reads the latest published one)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --draft=false
