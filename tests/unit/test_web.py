@@ -65,6 +65,11 @@ def daemon(engine, registry):
     engine.config.providers.update({"tts": ["fake-tts"], "triggers": ["fake-triggers"], "llm": ["closing-llm"]})
     ClosingLLM.closed = 0
     d = Daemon(engine, start_triggers=False)
+    # It detects the real machine in a thread at start-up; wait for that, or it could overwrite the
+    # hardware a test pins (so results would depend on the machine and on timing).
+    for t in threading.enumerate():
+        if t.name == "hardware":
+            t.join(30)
     events = []
     engine.events.subscribe(events.append)
     d.recorded = events
@@ -592,7 +597,7 @@ class TestProfilesApi:
         from zephvox.web import daemon as daemon_mod
 
         path = tmp_path / "config.toml"
-        path.write_text(f'[engine]\ndata_dir = "{tmp_path / "data"}"\n')
+        path.write_text(f'[engine]\ndata_dir = "{(tmp_path / "data").as_posix()}"\n')
         daemon.engine.config.source = path
         daemon.__dict__["hardware"] = Hardware("linux", "x86_64", "CPU", 8, 32.0, 100.0,
                                                [GPU("nvidia", "RTX", 12.0, "cuda")])  # fmt: skip
@@ -963,7 +968,7 @@ class TestQuit:
 
     def test_the_command(self, tmp_path, monkeypatch, capsys):
         engine_config = tmp_path / "c.toml"
-        engine_config.write_text(f'[engine]\ndata_dir = "{tmp_path}"\n')
+        engine_config.write_text(f'[engine]\ndata_dir = "{(tmp_path).as_posix()}"\n')
         calls = []
         monkeypatch.setattr("zephvox.web.client.stop_daemon", lambda d: calls.append(d) or None)
         assert cli.main(["quit", "--config", str(engine_config)]) == 0

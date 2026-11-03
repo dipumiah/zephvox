@@ -137,7 +137,7 @@ class TestProfiles:
     def test_every_profile_loads(self, tmp_path):
         for name in profiles.PROFILES:
             path = tmp_path / f"{name}.toml"
-            path.write_text(f'profile = "{name}"\n[engine]\ndata_dir = "{tmp_path / "data"}"\n')
+            path.write_text(f'profile = "{name}"\n[engine]\ndata_dir = "{(tmp_path / "data").as_posix()}"\n')
             cfg = load_config(path)
             assert cfg.profile == name and cfg.source == path
         assert load_config(tmp_path / "cpu-light.toml").engine.analyzers == ["pronunciation"]
@@ -145,7 +145,7 @@ class TestProfiles:
 
     def test_config_file_wins_over_profile(self, tmp_path):
         path = tmp_path / "c.toml"
-        path.write_text(f'profile = "small"\n[engine]\ndata_dir = "{tmp_path}"\n'
+        path.write_text(f'profile = "small"\n[engine]\ndata_dir = "{(tmp_path).as_posix()}"\n'
                         '[provider.openai-compat]\nmodel = "mine"\ntimeout = 5\n')  # fmt: skip
         cfg = load_config(path)
         assert cfg.provider_settings("openai-compat") == {"model": "mine", "timeout": 5}
@@ -185,7 +185,7 @@ class TestWriteProfile:
 
     def test_choosing_a_profile_with_analyzers_resets_the_gui_choice(self, tmp_path):
         path = tmp_path / "config.toml"
-        path.write_text(f'[engine]\ndata_dir = "{tmp_path}"\n')
+        path.write_text(f'[engine]\ndata_dir = "{(tmp_path).as_posix()}"\n')
         save_user_settings(tmp_path, {"analyzers": ["pronunciation", "grammar"], "tts": {"voice": "x"}})
         choose_profile(path, "small")  # no analyzers in this profile: the GUI choice stays
         assert load_user_settings(tmp_path)["analyzers"] == ["pronunciation", "grammar"]
@@ -248,13 +248,13 @@ class TestOllama:
 class TestDownloads:
     def test_plan_follows_the_profile(self, tmp_path):
         path = tmp_path / "c.toml"
-        path.write_text(f'[engine]\ndata_dir = "{tmp_path}"\n')
+        path.write_text(f'[engine]\ndata_dir = "{(tmp_path).as_posix()}"\n')
         names = [(d.source, d.name) for d in download.plan_downloads(load_config(path))]
         assert names == [("huggingface", "openai/whisper-large-v3-turbo"),
                          ("huggingface", "facebook/wav2vec2-lv-60-espeak-cv-ft"),
                          ("huggingface", "dipumiah018/deep-phonemizer-en-us"),  # the chain's guesser
                          ("huggingface", "hexgrad/Kokoro-82M"), ("ollama", "qwen3:8b")]  # fmt: skip
-        path.write_text(f'profile = "cpu-light"\n[engine]\ndata_dir = "{tmp_path}"\n')
+        path.write_text(f'profile = "cpu-light"\n[engine]\ndata_dir = "{(tmp_path).as_posix()}"\n')
         assert download.plan_downloads(load_config(path))[0] == Download("faster-whisper", "base.en", 0.15)
 
     def test_cache_paths(self, monkeypatch, tmp_path):
@@ -297,7 +297,7 @@ def install_root(tmp_path, monkeypatch):
     root = tmp_path / "root"
     root.mkdir()
     monkeypatch.setenv("HOME", str(tmp_path / "home"))  # service files and launchers land here, not in ~
-    (root / "config.example.toml").write_text(f'[engine]\ndata_dir = "{tmp_path / "data"}"\n')
+    (root / "config.example.toml").write_text(f'[engine]\ndata_dir = "{(tmp_path / "data").as_posix()}"\n')
     monkeypatch.setattr(wizard, "project_root", lambda: root)
     monkeypatch.setattr(state, "find_uv", lambda: "uv")
     monkeypatch.setattr(wizard.ollama, "find", lambda: "/bin/ollama")
@@ -376,7 +376,7 @@ class TestSetup:
         assert not runner.ran("zephvox.install.download") and install_root.pulled == []
 
     def test_existing_profile_is_the_default_on_a_rerun(self, tmp_path, install_root):
-        (install_root.path / "config.toml").write_text(f'profile = "small"\n[engine]\ndata_dir = "{tmp_path / "data"}"\n')
+        (install_root.path / "config.toml").write_text(f'profile = "small"\n[engine]\ndata_dir = "{(tmp_path / "data").as_posix()}"\n')
         run_setup(tmp_path, Recorder(), machine([nvidia(24)]), no_verify=True)
         assert load_config(install_root.path / "config.toml").profile == "small"
 
@@ -533,7 +533,7 @@ class TestUpdate:
         data = tmp_path / "data"
         data.mkdir()
         cfg = tmp_path / "c.toml"
-        cfg.write_text(f'[engine]\ndata_dir = "{data}"\n')
+        cfg.write_text(f'[engine]\ndata_dir = "{(data).as_posix()}"\n')
         assert update.run_uninstall(Namespace(yes=True, config=cfg)) == 0
         assert removed == ["launcher", "command"] and data.exists() and tmp_path.exists()
 

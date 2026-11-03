@@ -1,5 +1,6 @@
 """The app used to be called "speakcheck": what it left behind keeps working, and moves to the new name."""
 
+import sys
 import pytest
 import respx
 
@@ -9,6 +10,7 @@ from zephvox.engine import config
 from zephvox.server import os_service
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="the data folders come from XDG_* variables, which Windows ignores")
 class TestFolders:
     @pytest.fixture(autouse=True)
     def own_folders(self, tmp_path, monkeypatch):

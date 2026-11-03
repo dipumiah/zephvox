@@ -1,5 +1,6 @@
 """Providers that can be tested without models: LLM (HTTP), G2P (dictionaries, chain), PipeWire capture."""
 
+import sys
 import json
 import signal
 import subprocess
@@ -233,6 +234,7 @@ class FakeProc:
         self.waited += 1
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="PipeWire is Linux-only")
 class TestPipeWire:
     def test_availability(self):
         assert PipeWireCapture(services=Services(SystemCapabilities(binaries={"pw-record": True}))).check_available().ok

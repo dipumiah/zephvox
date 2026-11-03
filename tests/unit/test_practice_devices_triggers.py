@@ -107,7 +107,7 @@ class TestSettings:
 
     def test_load_config_applies_user_settings_and_shortcuts(self, tmp_path):
         path = tmp_path / "c.toml"
-        path.write_text(f'[engine]\ndata_dir = "{tmp_path}"\n[shortcuts]\ncancel = "Ctrl+Shift+X"\n')
+        path.write_text(f'[engine]\ndata_dir = "{(tmp_path).as_posix()}"\n[shortcuts]\ncancel = "Ctrl+Shift+X"\n')
         save_user_settings(tmp_path, {"analyzers": ["pronunciation"]})
         c = load_config(path)
         assert c.shortcuts["cancel"] == "Ctrl+Shift+X" and c.shortcuts["toggle_recording"] == "Ctrl+Shift+Alt+R"

@@ -95,7 +95,8 @@ class TestConnect:
         assert info["mode"] == "remote" and info["connected"] and info["account"] == "alice"
         assert info["reachable"] and info["headers"] == ["X-Proxy"] and info["device"] == "laptop"
         path = engine.config.engine.data_dir / credentials.FILE
-        assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
+        if os.name != "nt":  # Windows has no Unix file modes
+            assert stat.S_IMODE(os.stat(path).st_mode) == 0o600
         creds = credentials.load(engine.config.engine.data_dir, URL + "/")
         assert creds.key.startswith("sk_") and remote.server.db.device_for_key(creds.key)
         assert credentials.load(engine.config.engine.data_dir, "http://other") is None

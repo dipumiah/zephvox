@@ -1,5 +1,6 @@
 import json
 
+import sys
 import pytest
 
 from zephvox import cli
@@ -126,7 +127,7 @@ def test_cli_keyboard_interrupt_still_stops_recording(engine, capsys):
 
 def test_cli_builds_engine_from_config(tmp_path, monkeypatch, capsys):
     cfg = tmp_path / "c.toml"
-    cfg.write_text(f'[engine]\ndata_dir = "{tmp_path / "d"}"\n')
+    cfg.write_text(f'[engine]\ndata_dir = "{(tmp_path / "d").as_posix()}"\n')
     built = []
 
     def factory(config):
@@ -138,6 +139,7 @@ def test_cli_builds_engine_from_config(tmp_path, monkeypatch, capsys):
     assert built[0].providers["stt"] == ["faster-whisper"]
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="writes a Linux .desktop entry")
 def test_cli_desktop_entry(run_cli, tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     code, out, _ = run_cli("desktop-entry", "-q")
