@@ -39,6 +39,7 @@ from ..engine.engine import Engine, Recording
 from ..engine.errors import ProviderUnavailable, RecordingError, ZephvoxError
 from ..engine.events import Event
 from ..engine.session import Session
+from .models import ModelDownloads, missing_models
 from .notify import Notifier
 
 # Practice auto-stop: a level above SPEECH means the user started talking; staying below
@@ -116,6 +117,7 @@ class Daemon:
         # Without a config file (tests, embedding) the config as given is the base for page changes.
         self._initial_config = engine.config
         self.downloads: dict[str, dict[str, Any]] = {}  # grammar models being pulled, by name
+        self.models = ModelDownloads(self.publish)  # speech models fetched in the background
         self._sharing: Any = None  # the server inside the app ("Share this computer"), while on
         self._admin_db: Any = None
         if start_triggers and engine.config.server.share:  # turned on earlier: serve again
@@ -139,6 +141,19 @@ class Daemon:
         # Hardware detection runs programs (rocminfo, nvidia-smi): do it now, not when the page asks.
         threading.Thread(target=lambda: self.hardware, name="hardware", daemon=True).start()
         self._restart_sync()
+
+    # --- speech models: fetched ahead of use, with progress --------------------------------------
+
+    def start_model_downloads(self, only_if_missing: bool = True) -> dict[str, Any]:
+        """Download the models the config needs (resumes partial ones). Not in client mode: the server has them."""
+        config = self.engine.config
+        if only_if_missing and (config.remote.mode == "remote" or not missing_models(config)):
+            return self.models.snapshot()
+        return self.models.start(config.source)
+
+    def cancel_model_downloads(self) -> dict[str, Any]:
+        self.models.cancel()
+        return self.models.snapshot()
 
     # --- events -------------------------------------------------------------------------
 
@@ -1054,6 +1069,7 @@ class Daemon:
 
     def close(self) -> None:
         self._stop.set()
+        self.models.cancel()
         if self._sharing is not None:
             self._sharing.stop()
             self._sharing = None

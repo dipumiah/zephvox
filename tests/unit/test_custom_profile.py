@@ -52,8 +52,7 @@ class TestChoices:
         for kind in ("stt", "tts"):
             assert again.providers[kind][0] == start.providers[kind][0]
         assert again.engine.analyzers == start.engine.analyzers
-        assert {**again.provider_settings("openai-compat")}.get("model", "qwen3:8b") == \
-            start.provider_settings("openai-compat").get("model", "qwen3:8b")  # fmt: skip
+        assert "grammar" not in again.engine.analyzers  # opt-in: pressing Enter never turns it on
 
     def test_api_and_british(self):
         hw = machine([nvidia(8)])
@@ -106,6 +105,7 @@ class TestSetupWithCustom:
         with pytest.raises(ZephvoxError, match="custom-profile.toml"):
             setup.run_all()
         profiles.save_custom(profiles.custom_path(install_root.path / "config.toml"),
-                             {"provider": {"openai-compat": {"model": "qwen3:4b"}}})  # fmt: skip
+                             {"engine": {"analyzers": ["pronunciation", "grammar"]},
+                              "provider": {"openai-compat": {"model": "qwen3:4b"}}})  # fmt: skip
         assert setup.run_all() == 0
         assert install_root.pulled == ["qwen3:4b"]

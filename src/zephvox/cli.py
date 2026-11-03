@@ -48,6 +48,10 @@ def _parser() -> argparse.ArgumentParser:
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--open", action="store_true", help="open the page in your browser")
     s.add_argument("--no-shortcuts", action="store_true", help="don't register global shortcuts")
+    s.add_argument("--print-ready", action="store_true",
+                   help="for the desktop app: print one `ZEPHVOX_READY {json}` line on stdout when serving (--port 0: any free port)")  # fmt: skip
+    s.add_argument("--exit-on-stdin-close", action="store_true",
+                   help="for the desktop app: stop when the program that started us goes away")
     sub.add_parser("desktop-entry", parents=[common],
                    help="add zephvox to the app menu (Linux: also names its global shortcuts)")  # fmt: skip
     st = sub.add_parser("setup", parents=[common], help="detect this machine, choose a profile, install models")
@@ -56,8 +60,12 @@ def _parser() -> argparse.ArgumentParser:
     st.add_argument("--accelerator", choices=["cpu", "cuda", "rocm"], help="PyTorch build (default: detected)")
     st.add_argument("-y", "--yes", action="store_true", help="accept every default without asking")
     st.add_argument("--no-download", action="store_true", help="download models on first use instead")
-    st.add_argument("--no-grammar", action="store_true", help="don't offer grammar checking (pronunciation only)")
+    st.add_argument("--grammar", action="store_true",
+                    help="also set up grammar checking (needs Ollama and a language model; off by default)")
+    st.add_argument("--no-grammar", action="store_true", help=argparse.SUPPRESS)  # old name: grammar is off anyway
     st.add_argument("--no-ollama", action="store_true", help="don't install Ollama (grammar stays off)")
+    st.add_argument("--progress-json", action="store_true",
+                    help="for the desktop app: report steps and download progress as ZEPHVOX_EVENT lines (never asks)")  # fmt: skip
     st.add_argument("--no-launcher", action="store_true", help="don't add an app-menu entry")
     st.add_argument("--no-verify", action="store_true", help="skip the test analysis")
     st.add_argument("--dry-run", action="store_true", help="show what would be installed, change nothing")
@@ -176,7 +184,8 @@ def run(args: argparse.Namespace, engine: Engine, ask: Callable[[str], str]) -> 
     elif cmd == "serve":
         from .web.server import serve
 
-        serve(engine, args.host, args.port, args.open, shortcuts=not args.no_shortcuts)
+        serve(engine, args.host, args.port, args.open, shortcuts=not args.no_shortcuts,
+              print_ready=args.print_ready, exit_on_stdin_close=args.exit_on_stdin_close)
     elif cmd == "record":
         engine.start_recording()
         try:

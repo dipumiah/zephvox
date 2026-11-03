@@ -85,7 +85,19 @@ def free_launcher() -> Path | None:
     return old
 
 
+MANAGED_MESSAGE = ("This copy of zephvox is managed by the desktop app, which updates itself "
+                   "(it asks before installing a new version). Use the app, not the command line.")  # fmt: skip
+
+
+def managed_by_app() -> bool:
+    """Started by the desktop app, which owns updates and removal of its runtime folder."""
+    return os.environ.get("ZEPHVOX_MANAGED") == "1"
+
+
 def run_update(args: argparse.Namespace, fetch: Fetch = http_get, runner: Runner = subprocess.run) -> int:
+    if managed_by_app():
+        print(MANAGED_MESSAGE, file=sys.stderr)
+        return 2
     root = project_root()
     try:
         if root is None:
@@ -141,6 +153,10 @@ def _data_dir(args: argparse.Namespace) -> Path | None:
 
 
 def run_uninstall(args: argparse.Namespace, ask: Callable[[str], str] = input, runner: Runner = subprocess.run) -> int:
+    if managed_by_app():
+        print("The desktop app manages this copy: remove zephvox with your system's uninstaller "
+              "(Windows: Settings → Apps; macOS: drag it to the Bin; Linux: your package manager).", file=sys.stderr)
+        return 2
     console = Console(interactive=sys.stdin.isatty() and not args.yes, ask=ask)
     say = console.say
     root = project_root()

@@ -12,7 +12,7 @@
 # Choices made in the web GUI (microphone, voice, analyzers) are saved separately and win over this file.
 
 [engine]
-# analyzers = ["pronunciation", "grammar"]
+# analyzers = ["pronunciation"]   # add "grammar" to check grammar too (needs Ollama or an API; opt-in)
 # data_dir = "~/.local/share/zephvox"   # sessions and recordings (default: your OS's app-data folder)
 # sentence_split = true
 # practice_auto_stop_s = 1.2               # practice stops after this much silence (0 = manual stop only)

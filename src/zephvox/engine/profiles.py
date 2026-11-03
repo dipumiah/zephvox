@@ -27,10 +27,13 @@ class Profile:
     description: str
     gpu: bool  # GPU tiers install the GPU build of PyTorch; CPU tiers the small cpu build
     overlay: dict[str, Any] = field(default_factory=dict)
+    # Whether a local grammar model is suggested for this machine (grammar itself is always opt-in).
+    grammar_ok: bool = True
 
     @property
     def llm_model(self) -> str | None:
-        if "grammar" not in self.overlay.get("engine", {}).get("analyzers", ["grammar"]):
+        """The grammar model to offer if the user turns grammar checking on."""
+        if not self.grammar_ok:
             return None
         return self.overlay.get("provider", {}).get("openai-compat", {}).get("model", "qwen3:8b")
 
@@ -42,18 +45,19 @@ def _llm(model: str) -> dict[str, Any]:
 CPU_STT = {"stt": ["faster-whisper", "hf-whisper"]}
 
 PROFILES: dict[str, Profile] = {p.name: p for p in [
-    Profile("large", "Large GPU", "GPU with 16 GB+ (or a Mac with 32 GB+): the most accurate grammar model.",
+    Profile("large", "Large GPU", "GPU with 16 GB+ (or a Mac with 32 GB+): offers the most accurate grammar model.",
             True, {"provider": _llm("qwen3:14b")}),
     Profile("standard", "Standard GPU", "GPU with 10–16 GB (or a Mac with 16 GB+).", True, {}),
-    Profile("small", "Small GPU", "GPU with 6–10 GB (or a Mac with 8 GB): a smaller grammar model.",
+    Profile("small", "Small GPU", "GPU with 6–10 GB (or a Mac with 8 GB): offers a smaller grammar model.",
             True, {"provider": _llm("qwen3:4b")}),
     Profile("cpu", "CPU", "No usable GPU, 16 GB+ RAM. Works, but each analysis takes longer.",
             False, {"providers": CPU_STT,
                     "provider": {**_llm("qwen3:4b"), "wav2vec2": {"device": "cpu"}}}),
-    Profile("cpu-light", "CPU, light", "Under 16 GB RAM: pronunciation only, smaller speech model. "
+    Profile("cpu-light", "CPU, light", "Under 16 GB RAM: smaller speech model. "
             "Grammar can be turned on with a cloud LLM.",
-            False, {"providers": CPU_STT, "engine": {"analyzers": ["pronunciation"]},
-                    "provider": {"faster-whisper": {"model": "base.en"}, "wav2vec2": {"device": "cpu"}}}),
+            False, {"providers": CPU_STT,
+                    "provider": {"faster-whisper": {"model": "base.en"}, "wav2vec2": {"device": "cpu"}}},
+            grammar_ok=False),
 ]}  # fmt: skip
 
 

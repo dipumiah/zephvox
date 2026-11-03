@@ -148,7 +148,8 @@ def load_env(dirs: list[Path] | None = None) -> list[Path]:
 class EngineSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    analyzers: list[str] = ["pronunciation", "grammar"]
+    # Grammar checking needs a language model (Ollama or an API), so it is opt-in.
+    analyzers: list[str] = ["pronunciation"]
     data_dir: Path = Field(default_factory=default_data_dir)
     sentence_split: bool = True
     # Analyzer used to score practice attempts against a known text.

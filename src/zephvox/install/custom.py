@@ -47,7 +47,7 @@ class Choices:
     device: str = "gpu"  # gpu | cpu
     stt: str = "openai/whisper-large-v3-turbo"  # a Whisper repo (gpu) or a faster-whisper size (cpu)
     accent: str = "en-us"  # en-us | en-gb
-    grammar: str = "ollama"  # ollama | api | off
+    grammar: str = "off"  # off | ollama | api (opt-in)
     llm_model: str = "qwen3:8b"
     llm_url: str = LOCAL_OLLAMA
     llm_key_env: str | None = None

@@ -30,6 +30,7 @@ from ..engine.config import (
 from ..engine.errors import ZephvoxError
 from ..providers.base import Download
 from . import ollama
+from .events import emit
 from .download import cache_path, plan_downloads
 from .state import ROLES, InstallState, Runner, SetupError, extras_for, sync
 
@@ -40,16 +41,23 @@ STEPS = 7
 class Console:
     """Questions with defaults; non-interactive runs take the defaults."""
 
-    def __init__(self, interactive: bool, ask: Callable[[str], str] = input, out: Callable[[str], None] | None = None):
+    def __init__(self, interactive: bool, ask: Callable[[str], str] = input, out: Callable[[str], None] | None = None,
+                 events: bool = False):  # fmt: skip
         self.interactive, self._ask = interactive, ask
         # Flushed: subprocesses (uv, downloads) write to the same terminal in between.
         self.say = out or (lambda text="": print(text, flush=True))
+        self.events = events  # for the desktop app: also report steps and log lines as ZEPHVOX_EVENT lines
+        if events and out is None:  # log lines travel as events instead of plain text
+            self.say = lambda text="": emit("log", text=str(text))
         self._step = 0
         self.total = STEPS
 
     def step(self, title: str) -> None:
         self._step += 1
-        self.say(f"\n[{self._step}/{self.total}] {title}")
+        if self.events:
+            emit("step", n=self._step, total=self.total, title=title)
+        else:
+            self.say(f"\n[{self._step}/{self.total}] {title}")
 
     def text(self, question: str, default: str = "") -> str:
         if not self.interactive:
@@ -211,7 +219,7 @@ class Setup:
                 say(f"  {label(d)}: {gb(d.approx_gb)}")
                 need += d.approx_gb or 0
         if not grammar_enabled(config):
-            say("  Grammar checking is off in this profile (turn it on in the page's settings).")
+            say("  Grammar checking is off (opt-in: rerun with --grammar, or turn it on in the page's settings).")
         say(f"  Disk space needed: about {gb(need)} (free: {gb(self.hw.disk_free_gb)})")
         if need > self.hw.disk_free_gb:
             say("  ! That's more than the free space.")
@@ -237,6 +245,13 @@ class Setup:
         else:
             say(f"  Install it from {ollama.DOWNLOAD_PAGE}, then run `zephvox setup` again.")
         return None
+
+    def grammar_was_on(self) -> bool:
+        """Grammar was turned on earlier (config.toml or the page's settings): rerunning setup keeps it."""
+        try:
+            return self.config_path.exists() and "grammar" in load_config(self.config_path).engine.analyzers
+        except Exception:
+            return False
 
     def ask_grammar(self, config: Config, downloads: list[Download], accelerator: str) -> bool:
         """Grammar checking is optional: say what it needs and ask. False means leave it off."""
@@ -273,6 +288,8 @@ class Setup:
             self.console.say("  Skipped (--no-download): models download on first use.")
             return
         cmd = [self.python, "-m", "zephvox.install.download", "--config", str(self.config_path)]
+        if getattr(self.args, "progress_json", False):
+            cmd.append("--progress-json")
         if self.run(cmd, check=False).returncode != 0:
             self.console.say("  ! Some models failed to download; they will be retried on first use.")
         for d in downloads:
@@ -465,6 +482,13 @@ class Setup:
         profile = profiles.custom(self.custom) if self.custom is not None else profiles.get(name, self.config_path)
         accelerator = self.args.accelerator or profiles.accelerator(profile, self.hw)
         config = preview_config(self.config_path, name, self.template, self.custom)
+        # Grammar checking is opt-in: asked for with --grammar, or already on in this install.
+        want_grammar = self.custom is None and (getattr(self.args, "grammar", False) or self.grammar_was_on())
+        if want_grammar and not profile.grammar_ok:
+            say("  Grammar checking isn't offered for this profile (turn it on with a cloud LLM in the page's settings).")
+            want_grammar = False
+        if want_grammar and "grammar" not in config.engine.analyzers:
+            config.engine.analyzers = [*config.engine.analyzers, "grammar"]
         downloads = plan_downloads(config)
         grammar_off = self.custom is None and not self.ask_grammar(config, downloads, accelerator)
         if grammar_off:
@@ -475,6 +499,9 @@ class Setup:
             return 0
         if not self.show_plan(profile, accelerator, config, downloads):
             say("Nothing changed.")
+            if self.console.events:  # nobody to ask (the desktop app): the only reason is too little disk space
+                emit("error", message="There isn't enough free disk space for the packages and models. "
+                                      "Free some space and try again.")  # fmt: skip
             return 1
 
         self.console.step("Installing")
@@ -483,6 +510,7 @@ class Setup:
             ollama_binary = None if self.args.no_ollama else self.ensure_ollama(accelerator)
             if ollama_binary is None:
                 self.disable_grammar(config)
+                want_grammar = False
         state = InstallState.load(self.root)
         was_client = state.role == "client"
         state.accelerator, state.extras, state.role = accelerator, extras_for(accelerator, role), role
@@ -497,6 +525,10 @@ class Setup:
         say(f"  Profile '{name}' saved in {self.config_path}")
         if grammar_off:  # after choose_profile, which clears analyzers saved earlier
             self.disable_grammar(config, "whenever you like")
+        elif want_grammar and grammar_enabled(config):  # opted in: keep it on
+            stored = load_user_settings(config.engine.data_dir)
+            stored["analyzers"] = list(config.engine.analyzers)
+            save_user_settings(config.engine.data_dir, stored)
 
         config = load_config(self.config_path)
         if was_client and config.remote.mode == "remote" and self.console.confirm(
@@ -516,11 +548,14 @@ class Setup:
 
 
 def run_setup(args: argparse.Namespace, ask: Callable[[str], str] = input) -> int:
-    console = Console(interactive=sys.stdin.isatty() and not args.yes, ask=ask)
+    as_events = getattr(args, "progress_json", False)
+    console = Console(interactive=sys.stdin.isatty() and not args.yes and not as_events, ask=ask, events=as_events)
     try:
         return Setup(args, console).run_all()
     except ZephvoxError as e:
         print(f"error: {e}", file=sys.stderr)
+        if as_events:
+            emit("error", message=str(e))
         return 2
     except KeyboardInterrupt:
         print("\nStopped.", file=sys.stderr)

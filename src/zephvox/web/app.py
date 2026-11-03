@@ -107,6 +107,13 @@ def create_app(daemon: Daemon) -> FastAPI:
         except (RecordingError, ProviderUnavailable, ZephvoxError) as e:
             raise HTTPException(409, str(e)) from None
 
+    @app.get("/healthz")
+    def healthz():
+        """What the desktop shell checks before showing the page (and after every engine update)."""
+        from .. import API_VERSION, __version__
+
+        return {"ok": True, "engine_version": __version__, "api_version": API_VERSION}
+
     # --- live events ----------------------------------------------------------------------
 
     @app.get("/api/events")
@@ -205,6 +212,18 @@ def create_app(daemon: Daemon) -> FastAPI:
         if op not in ("install", "remove"):
             raise HTTPException(404, "install or remove")
         return guard(daemon.service_action, op == "install")
+
+    @app.get("/api/models/downloads")
+    def model_downloads():
+        return daemon.models.snapshot()
+
+    @app.post("/api/models/downloads")
+    def start_model_downloads():
+        return daemon.start_model_downloads(only_if_missing=False)
+
+    @app.delete("/api/models/downloads")
+    def cancel_model_downloads():
+        return daemon.cancel_model_downloads()
 
     @app.post("/api/models/pull")
     def pull_model(body: ModelBody):

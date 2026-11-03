@@ -189,7 +189,8 @@ class TestWriteProfile:
         save_user_settings(tmp_path, {"analyzers": ["pronunciation", "grammar"], "tts": {"voice": "x"}})
         choose_profile(path, "small")  # no analyzers in this profile: the GUI choice stays
         assert load_user_settings(tmp_path)["analyzers"] == ["pronunciation", "grammar"]
-        choose_profile(path, "cpu-light")
+        profiles.save_custom(profiles.custom_path(path), {"engine": {"analyzers": ["pronunciation"]}})
+        choose_profile(path, "custom")  # a profile that names analyzers replaces the GUI choice
         assert load_user_settings(tmp_path) == {"tts": {"voice": "x"}}
         assert load_config(path).engine.analyzers == ["pronunciation"]
 
@@ -286,7 +287,7 @@ def setup_args(tmp_path, **overrides):
     args = dict(config=tmp_path / "root" / "config.toml", profile=None, accelerator=None, yes=True,
                 no_download=False, no_ollama=False, no_launcher=True, no_verify=False, dry_run=False,
                 installed_version=None, role="full", server_url=None, server_header=None, invite=None,
-                device_name=None, no_grammar=False)  # fmt: skip
+                device_name=None, grammar=False, no_grammar=False)  # fmt: skip
     args.update(overrides)
     return Namespace(**args)
 
@@ -323,7 +324,26 @@ class TestSetup:
         (sync,) = runner.ran("uv sync")
         assert sync[sync.index("--extra") + 3] == "cuda"
         assert runner.ran("zephvox.install.download") and runner.ran("selftest.wav")
+        assert install_root.pulled == []  # grammar is opt-in: no Ollama model unless asked
+
+    def test_grammar_flag_installs_the_model_and_keeps_it_on(self, tmp_path, install_root):
+        assert run_setup(tmp_path, Recorder(), machine([nvidia(12)]), no_verify=True, grammar=True) == 0
         assert install_root.pulled == ["qwen3:8b"]
+        assert load_user_settings(tmp_path / "data")["analyzers"] == ["pronunciation", "grammar"]
+        install_root.pulled.clear()
+        assert run_setup(tmp_path, Recorder(), machine([nvidia(12)]), no_verify=True) == 0  # rerun, no flag
+        assert load_user_settings(tmp_path / "data")["analyzers"] == ["pronunciation", "grammar"]
+
+    def test_events_mode_reports_low_disk_space_as_an_error(self, tmp_path, install_root, capsys):
+        console = wizard.Console(interactive=False, events=True)
+        setup = wizard.Setup(setup_args(tmp_path, progress_json=True), console, runner=Recorder(),
+                             detect=lambda root: machine([nvidia(12)], disk=1.0))  # fmt: skip
+        assert setup.run_all() == 1
+        from zephvox.install import events
+
+        parsed = [e for line in capsys.readouterr().out.splitlines() if (e := events.parse(line))]
+        assert [e for e in parsed if e["type"] == "error"][0]["message"].startswith("There isn't enough free disk space")
+        assert any(e["type"] == "step" for e in parsed)
 
     def test_a_server_address_means_client(self, tmp_path, install_root):
         setup = wizard.Setup(setup_args(tmp_path, role=None, server_url="https://s.example"),
@@ -363,7 +383,7 @@ class TestSetup:
     def test_without_ollama_grammar_is_turned_off(self, tmp_path, install_root, monkeypatch):
         monkeypatch.setattr(wizard.ollama, "find", lambda: None)
         monkeypatch.setattr(wizard.ollama, "install_command", lambda *a: None)
-        assert run_setup(tmp_path, Recorder(), machine([nvidia(12)]), no_verify=True) == 0
+        assert run_setup(tmp_path, Recorder(), machine([nvidia(12)]), no_verify=True, grammar=True) == 0
         assert load_user_settings(tmp_path / "data")["analyzers"] == ["pronunciation"]
         assert install_root.pulled == []
 
@@ -371,17 +391,21 @@ class TestSetup:
         shown = []
         asked = []
         console = wizard.Console(interactive=True, ask=lambda q: asked.append(q) or "n", out=shown.append)
-        setup = wizard.Setup(setup_args(tmp_path, yes=False, profile="standard", no_launcher=True), console,
+        setup = wizard.Setup(setup_args(tmp_path, yes=False, profile="standard", no_launcher=True, grammar=True), console,
                              runner=Recorder(), detect=lambda root: machine([nvidia(12)]))  # fmt: skip
         assert setup.run_all() == 1  # the final "Continue?" answer is also "n"
         text = "\n".join(shown)
         assert "Grammar checking (optional)" in text and "Ollama" in text and "qwen3:8b" in text and "GPU memory" in text
         assert any("Check grammar too?" in q for q in asked)
 
-    def test_no_grammar_flag_skips_the_question(self, tmp_path, install_root):
-        assert run_setup(tmp_path, Recorder(), machine([nvidia(12)]), no_verify=True, no_grammar=True) == 0
-        assert load_user_settings(tmp_path / "data")["analyzers"] == ["pronunciation"]
-        assert install_root.pulled == []
+    def test_grammar_is_off_by_default_and_not_asked(self, tmp_path, install_root):
+        shown = []
+        console = wizard.Console(interactive=False, out=shown.append)
+        setup = wizard.Setup(setup_args(tmp_path, profile="standard"), console, runner=Recorder(),
+                             detect=lambda root: machine([nvidia(12)]))  # fmt: skip
+        assert setup.run_all() == 0
+        assert "Check grammar too?" not in "\n".join(shown) and install_root.pulled == []
+        assert "grammar" not in load_config(install_root.path / "config.toml").engine.analyzers
 
     def test_dry_run_changes_nothing(self, tmp_path, install_root):
         runner = Recorder()
@@ -517,3 +541,11 @@ class TestUpdate:
 def test_selftest_clip_ships_with_the_package():
     assert wizard.SELFTEST_CLIP.exists() and wizard.SELFTEST_CLIP.stat().st_size > 10_000
     assert Path(wizard.SELFTEST_CLIP).suffix == ".wav"
+
+
+def test_update_and_uninstall_refuse_inside_the_desktop_app(monkeypatch, capsys):
+    monkeypatch.setenv("ZEPHVOX_MANAGED", "1")
+    assert update.run_update(Namespace(force=False, no_restart=False)) == 2
+    assert "desktop app" in capsys.readouterr().err
+    assert update.run_uninstall(Namespace(yes=True, config=None)) == 2
+    assert "uninstaller" in capsys.readouterr().err

@@ -475,7 +475,7 @@ class TestClientAndCLI:
 
     def test_serve_command(self, run, monkeypatch):
         seen = {}
-        monkeypatch.setattr(web_server, "serve", lambda engine, host, port, open_, shortcuts: seen.update(
+        monkeypatch.setattr(web_server, "serve", lambda engine, host, port, open_, shortcuts, **_: seen.update(
             host=host, port=port, open=open_, shortcuts=shortcuts))  # fmt: skip
         assert run("serve", "--port", "9000", "--open", "--no-shortcuts", "-q", daemon_url=None)[0] == 0
         assert seen == {"host": "127.0.0.1", "port": 9000, "open": True, "shortcuts": False}
@@ -959,3 +959,42 @@ class TestQuit:
         monkeypatch.setattr("zephvox.web.client.stop_daemon", lambda d: URL)
         assert cli.main(["quit", "--config", str(engine_config)]) == 0
         assert "stopped" in capsys.readouterr().out
+
+
+# --- desktop shell contract ---------------------------------------------------------------
+
+
+def test_healthz_reports_versions(api):
+    from zephvox import API_VERSION, __version__
+
+    assert api.get("/healthz").json() == {"ok": True, "engine_version": __version__, "api_version": API_VERSION}
+
+
+def test_sidecar_prints_ready_line_and_exits_when_stdin_closes(tmp_path):
+    import json
+    import subprocess
+    import sys
+
+    from zephvox.web.server import READY_PREFIX
+
+    env = {**__import__("os").environ, "ZEPHVOX_HOME": str(tmp_path)}
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "zephvox.cli", "serve", "--port", "0", "--no-shortcuts", "--print-ready",
+         "--exit-on-stdin-close"],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, env=env, text=True)  # fmt: skip
+    try:
+        line = proc.stdout.readline()
+        assert line.startswith(READY_PREFIX)
+        info = json.loads(line[len(READY_PREFIX):])
+        assert info["port"] > 0 and info["url"].endswith(str(info["port"]))
+        proc.stdin.close()  # the parent went away
+        assert proc.wait(timeout=20) == 0
+    finally:
+        proc.kill()
+
+
+def test_model_download_endpoints(api, daemon):
+    assert api.get("/api/models/downloads").json()["running"] is False
+    daemon.models.start = lambda path: {"running": True}  # no real downloader in tests
+    assert api.post("/api/models/downloads").json() == {"running": True}
+    assert api.delete("/api/models/downloads").status_code == 200

@@ -35,7 +35,7 @@ said and what it should have been. Then practice them until they pass.
 |---|---|
 | 🎤 **One shortcut, anywhere** | Press **Ctrl+Shift+Alt+R** from any app, talk, press it again. A desktop note tells you when your report is ready. |
 | 🔊 **Sounds, not just words** | Expected sounds lined up against the ones you made, so a dropped or swapped sound is obvious (`θ → t`). |
-| 📝 **Grammar, with the fix** | The sentence you said, the corrected one, and a short reason. Mark a false alarm and it's ignored from then on. |
+| 📝 **Grammar, with the fix** (opt-in) | Turn it on in Settings. The sentence you said, the corrected one, and a short reason. Mark a false alarm and it's ignored from then on. |
 | 🎯 **Practice that scores you** | Say a word, get 0–100 within a moment, every sound marked right or wrong, and a mouth tip. It stops listening when you stop talking. |
 | 🌬️ **A page that shows what's happening** | Wind that follows your voice while you record, and carries your words through each analysis step. Calm when idle. |
 | 📈 **Progress** | Your weakest words and the sounds you mix up most, across every recording. |
@@ -71,7 +71,7 @@ The script installs [uv](https://docs.astral.sh/uv/) if needed, downloads zephvo
 1. 🔍 **detects your hardware**: CPU, RAM, GPU and its memory, free disk space;
 2. 🎚️ **recommends a profile** (below). Accept it or pick another;
 3. 📋 **shows what it will download** and checks the disk space;
-4. 🦙 **installs [Ollama](https://ollama.com)** for grammar checking, which is optional: setup lists what it needs (Ollama, the model and its size, GPU memory) and asks first, or skip it with `--no-grammar`; it installs Ollama only if you agree (winget, Homebrew, pacman or Ollama's script);
+4. 🦙 **grammar checking is off by default.** It is opt-in: add `--grammar` to setup, or turn it on in **Settings**. Setup then lists what it needs (Ollama, the model and its size, GPU memory), asks first and installs Ollama only if you agree (winget, Homebrew, pacman or Ollama's script);
 5. 🔥 **installs the matching PyTorch build** (NVIDIA → CUDA, AMD on Linux → ROCm, otherwise CPU; Macs use the Apple GPU);
 6. ⬇️ **downloads the models** with progress bars;
 7. 🚪 **adds zephvox to your app menu** and a `zephvox` command to your terminal;
@@ -102,13 +102,13 @@ between the server and this computer, and offers to install the engine here if i
 
 <br>
 
-| Profile | Recommended for | Speech to text | Grammar model |
+| Profile | Recommended for | Speech to text | Grammar model (if you turn grammar on) |
 |---|---|---|---|
 | `large` | GPU with 16 GB+, or a Mac with 32 GB+ | Whisper large-v3-turbo (GPU) | qwen3:14b |
 | `standard` | GPU with 10–16 GB, or a Mac with 16 GB+ | Whisper large-v3-turbo (GPU) | qwen3:8b |
 | `small` | GPU with 6–10 GB, or a Mac with 8 GB | Whisper large-v3-turbo (GPU) | qwen3:4b |
 | `cpu` | no usable GPU, 16 GB+ RAM | Whisper small.en (faster-whisper) | qwen3:4b (slow) |
-| `cpu-light` | under 16 GB RAM | Whisper base.en (faster-whisper) | off (a cloud LLM can be added) |
+| `cpu-light` | under 16 GB RAM | Whisper base.en (faster-whisper) | none offered (a cloud LLM can be added) |
 | `custom` | your own choices | any Whisper size, GPU or CPU | any Ollama model, an OpenAI-compatible API, or off |
 
 **Custom** asks for each part in turn: GPU or CPU, the speech-to-text model, American or British
@@ -461,7 +461,7 @@ Each stage takes a preference list, and the first available driver wins:
 
 ```toml
 [engine]
-analyzers = ["pronunciation", "grammar"]
+analyzers = ["pronunciation"]            # add "grammar" to check grammar too (opt-in)
 
 [providers]
 stt = ["hf-whisper", "faster-whisper"]

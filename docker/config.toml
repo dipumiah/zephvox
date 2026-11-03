@@ -3,6 +3,7 @@
 
 [engine]
 data_dir = "/data"
+analyzers = ["pronunciation", "grammar"]   # compose.yml runs Ollama next to the server
 
 [server]
 host = "0.0.0.0"   # inside the container; compose.yml decides what the host exposes
