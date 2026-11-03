@@ -80,6 +80,7 @@ class TestDesktopEntries:
         desktop.remove()
         assert not entry.exists() and not old[0].exists()
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="uses a Unix symlink and shell script")
     def test_only_our_own_old_command_is_removed(self, tmp_path, monkeypatch):
         monkeypatch.setenv("HOME", str(tmp_path))
         bin_dir = tmp_path / ".local" / "bin"

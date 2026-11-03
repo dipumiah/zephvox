@@ -3,8 +3,10 @@
 import asyncio
 import contextlib
 import json
+import sys
 import threading
 import time
+from pathlib import Path
 from types import SimpleNamespace
 
 import httpx
@@ -799,6 +801,7 @@ class TestConfigApi:
         docs = docs_from_example(project_root() / "config.example.toml")
         assert "GPU" in docs["provider.hf-whisper.device"] and "stricter" in docs["analyzer.pronunciation.threshold"]
 
+    @pytest.mark.skipif(sys.platform == "win32", reason="the fake ollama is a /bin/sh script")
     def test_model_download_reports_progress(self, api, daemon, monkeypatch, tmp_path):
         from zephvox.install import ollama
 
@@ -964,7 +967,9 @@ class TestQuit:
         url = web_client.start_daemon(tmp_path, tmp_path / "data", popen=lambda cmd, **kw: launched.append((cmd, kw)),
                                       sleep=lambda s: None)  # fmt: skip
         assert url == URL and launched[0][0][1:] == ["-m", "zephvox.cli", "serve"]
-        assert launched[0][1]["cwd"] == tmp_path and launched[0][1].get("start_new_session") is True
+        assert Path(launched[0][1]["cwd"]).samefile(tmp_path)
+        if sys.platform != "win32":  # Windows detaches with creation flags instead
+            assert launched[0][1].get("start_new_session") is True
 
     def test_the_command(self, tmp_path, monkeypatch, capsys):
         engine_config = tmp_path / "c.toml"

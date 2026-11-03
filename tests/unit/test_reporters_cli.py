@@ -75,7 +75,7 @@ def test_cli_analyze_with_output_file(run_cli, wav_file, tmp_path):
     out_file = tmp_path / "report.md"
     code, out, err = run_cli("analyze", str(wav_file), "--format", "markdown", "-o", str(out_file))
     assert code == 0
-    assert "## Pronunciation (1)" in out and out_file.read_text() == out
+    assert "## Pronunciation (1)" in out and out_file.read_text(encoding="utf-8") == out
     assert "· transcript …" in err and "using stt provider: fake-stt" in err and "skipped" in err
 
 
