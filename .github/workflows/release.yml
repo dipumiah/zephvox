@@ -12,7 +12,6 @@ name: Release
 on:
   push:
     tags: ["v*"]
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,14 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Versions agree and the updater key is set
+      - name: Versions agree with the tag, and the updater key is set
         run: |
-          py=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml | head -1)
-          tauri=$(python3 -c "import json;print(json.load(open('app/src-tauri/tauri.conf.json'))['version'])")
-          cargo=$(sed -n 's/^version = "\(.*\)"/\1/p' app/src-tauri/Cargo.toml | head -1)
-          echo "python $py, tauri $tauri, cargo $cargo, ref ${GITHUB_REF_NAME}"
-          [ "$py" = "$tauri" ] && [ "$py" = "$cargo" ] || { echo "versions differ"; exit 1; }
-          if [ "${GITHUB_REF_TYPE}" = tag ]; then [ "v$py" = "${GITHUB_REF_NAME}" ] || { echo "tag doesn't match the version"; exit 1; }; fi
+          python3 scripts/bump_version.py --check "${GITHUB_REF_NAME}"
           if grep -q REPLACE_WITH_PUBLIC_KEY app/src-tauri/tauri.conf.json; then echo "set plugins.updater.pubkey first"; exit 1; fi
       - uses: astral-sh/setup-uv@v5
       - run: uv run --extra web --extra desktop python -m pytest -q
@@ -82,6 +76,7 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: "zephvox ${{ github.ref_name }}"
           releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-rc') }}
           includeUpdaterJson: true
           args: --target ${{ matrix.target }}
 
@@ -89,7 +84,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Publish the release (the app's update check reads the latest published one)
+      - name: Publish the release
+        # Tags like v0.2.0-rc.1 become pre-releases: GitHub's "latest release" (which the app's update check
+        # and the install scripts read) ignores them, so a test build never reaches real users.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release edit "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --draft=false
+        run: |
+          notes=$(gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" -f tag_name="${GITHUB_REF_NAME}" --jq .body)
+          flags="--draft=false"
+          case "${GITHUB_REF_NAME}" in *-rc*) flags="$flags --prerelease";; *) flags="$flags --latest";; esac
+          gh release edit "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --notes "$notes" $flags

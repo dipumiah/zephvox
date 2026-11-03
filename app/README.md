@@ -67,9 +67,16 @@ cd src-tauri && cargo test                       # the shell's own tests
    `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`) and the private key and password in the repository
    secrets `TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Lose that key and installed apps
    can't be updated.
-2. Make the versions agree: `pyproject.toml`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`.
-3. Tag `vX.Y.Z` and push. `.github/workflows/release.yml` tests, builds each platform, attaches the installers
-   and `latest.json` to a draft release, and publishes it when every platform built.
+2. Set the version everywhere with `python scripts/bump_version.py X.Y.Z` (the engine must have the same
+   version as the app, so it also updates `__init__.py` and both lockfiles). Commit it.
+3. Tag `vX.Y.Z` and push. `.github/workflows/release.yml` checks the tag against the files, tests, builds each
+   platform, attaches the installers and `latest.json` to a draft release, and publishes it (with generated
+   notes) when every platform built.
+
+**Trying a release first:** `python scripts/bump_version.py X.Y.Z-rc.1` and tag `vX.Y.Z-rc.1`. Tags containing
+`-rc` are published as *pre-releases*, which GitHub's "latest release" ignores, so neither the app's update check
+nor the install scripts see them. Download the installer from the release page and try it. To test an update
+from an rc build, point `plugins.updater.endpoints` at that release's own `latest.json` in a local build.
 
 Signing: without an Apple Developer ID (notarization) and a Windows code-signing certificate, macOS Gatekeeper
 and Windows SmartScreen warn on first launch. The Apple/Windows secrets in the workflow are optional; unsigned
